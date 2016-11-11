@@ -268,7 +268,7 @@ static struct msm_gpiomux_config shinano_all_configs[] __initdata = {
 			[GPIOMUX_SUSPENDED] = &gpio_2ma_pull_up_in,
 		},
 	},
-	{ /* UIM_DETECT */
+	{ /* UIM1_DETECT */
 		.gpio = 9,
 		.settings = {
 			[GPIOMUX_ACTIVE]    = &gpio_2ma_no_pull_in,
@@ -530,32 +530,32 @@ static struct msm_gpiomux_config shinano_all_configs[] __initdata = {
 			[GPIOMUX_SUSPENDED] = &ts_i2c,
 		},
 	},
-	{ /* NC(UIM2_DATA) */
+	{ /* UIM2_DATA */
 		.gpio = 49,
 		.settings = {
-			[GPIOMUX_ACTIVE]    = &gpio_2ma_no_pull_out_low,
-			[GPIOMUX_SUSPENDED] = &gpio_2ma_pull_down_in,
+			[GPIOMUX_ACTIVE]    = &gpio_2ma_follow_qct,
+			[GPIOMUX_SUSPENDED] = &gpio_2ma_follow_qct,
 		},
 	},
-	{ /* NC(UIM2_CLK) */
+	{ /* UIM2_CLK */
 		.gpio = 50,
 		.settings = {
-			[GPIOMUX_ACTIVE]    = &gpio_2ma_no_pull_out_low,
-			[GPIOMUX_SUSPENDED] = &gpio_2ma_pull_down_in,
+			[GPIOMUX_ACTIVE]    = &gpio_2ma_follow_qct,
+			[GPIOMUX_SUSPENDED] = &gpio_2ma_follow_qct,
 		},
 	},
-	{ /* NC(UIM2_RST) */
+	{ /* UIM2_RST */
 		.gpio = 51,
 		.settings = {
-			[GPIOMUX_ACTIVE]    = &gpio_2ma_no_pull_out_low,
-			[GPIOMUX_SUSPENDED] = &gpio_2ma_pull_down_in,
+			[GPIOMUX_ACTIVE]    = &gpio_2ma_follow_qct,
+			[GPIOMUX_SUSPENDED] = &gpio_2ma_follow_qct,
 		},
 	},
-	{ /* NC(UIM2_DETECT) */
+	{ /* UIM2_DETECT */
 		.gpio = 52,
 		.settings = {
-			[GPIOMUX_ACTIVE]    = &gpio_2ma_no_pull_out_low,
-			[GPIOMUX_SUSPENDED] = &gpio_2ma_pull_down_in,
+			[GPIOMUX_ACTIVE]    = &gpio_2ma_follow_qct,
+			[GPIOMUX_SUSPENDED] = &gpio_2ma_follow_qct,
 		},
 	},
 	{ /* NC */
@@ -580,7 +580,7 @@ static struct msm_gpiomux_config shinano_all_configs[] __initdata = {
 			[GPIOMUX_SUSPENDED] = &gpio_2ma_no_pull_out_low,
 		},
 	},
-	{ /* FELICA_PON_OR_NFC_DWLD_EN */
+	{ /* NFC_DWLD_EN */
 		.gpio = 57,
 		.settings = {
 			[GPIOMUX_ACTIVE]    = &gpio_2ma_no_pull_out_low,
@@ -847,7 +847,7 @@ static struct msm_gpiomux_config shinano_all_configs[] __initdata = {
 			[GPIOMUX_SUSPENDED] = &gpio_2ma_follow_qct,
 		},
 	},
-	{ /* NC(UIM1_DETECT) */
+	{ /* NC */
 		.gpio = 100,
 		.settings = {
 			[GPIOMUX_ACTIVE]    = &gpio_2ma_pull_up_in,
@@ -879,31 +879,34 @@ static struct msm_gpiomux_config shinano_all_configs[] __initdata = {
 		.gpio = 104,
 		.settings = { [GPIOMUX_SUSPENDED] = &unused_gpio, },
 	},
-	{ /* NC */
+	{ /* PA_ON0 */
 		.gpio = 105,
-		.settings = { [GPIOMUX_SUSPENDED] = &unused_gpio, },
+		.settings = {
+			[GPIOMUX_ACTIVE]    = &gpio_2ma_no_pull_out_low,
+			[GPIOMUX_SUSPENDED] = &gpio_2ma_no_pull_out_low,
+		},
 	},
-	{ /* NC */
+	{ /* PA_ON1 */
 		.gpio = 106,
-		.settings = { [GPIOMUX_SUSPENDED] = &unused_gpio, },
+		.settings = {
+			[GPIOMUX_ACTIVE]    = &gpio_2ma_no_pull_out_low,
+			[GPIOMUX_SUSPENDED] = &gpio_2ma_no_pull_out_low,
+		},
 	},
 	{ /* NC */
 		.gpio = 107,
 		.settings = { [GPIOMUX_SUSPENDED] = &unused_gpio, },
 	},
-	{ /* SW_TX_LB4 */
+	{ /* PA_ON2 */
 		.gpio = 108,
 		.settings = {
-			[GPIOMUX_ACTIVE]    = &gpio_2ma_follow_qct,
-			[GPIOMUX_SUSPENDED] = &gpio_2ma_follow_qct,
+			[GPIOMUX_ACTIVE]    = &gpio_2ma_no_pull_out_low,
+			[GPIOMUX_SUSPENDED] = &gpio_2ma_no_pull_out_low,
 		},
 	},
-	{ /* MAIN_TERM_SW_SEL */
+	{ /* NC */
 		.gpio = 109,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &gpio_2ma_follow_qct,
-			[GPIOMUX_SUSPENDED] = &gpio_2ma_follow_qct,
-		},
+		.settings = { [GPIOMUX_SUSPENDED] = &unused_gpio, },
 	},
 	{ /* NC */
 		.gpio = 110,
@@ -943,26 +946,29 @@ static struct msm_gpiomux_config shinano_all_configs[] __initdata = {
 		.gpio = 117,
 		.settings = { [GPIOMUX_SUSPENDED] = &unused_gpio, },
 	},
-	{ /* NC */
+	{ /* PA_R0 */
 		.gpio = 118,
-		.settings = { [GPIOMUX_SUSPENDED] = &unused_gpio, },
-	},
-	{ /* NC */
-		.gpio = 119,
-		.settings = { [GPIOMUX_SUSPENDED] = &unused_gpio, },
-	},
-	{ /* SW_PRX_LB3 */
-		.gpio = 120,
 		.settings = {
 			[GPIOMUX_ACTIVE]    = &gpio_2ma_follow_qct,
 			[GPIOMUX_SUSPENDED] = &gpio_2ma_follow_qct,
 		},
 	},
-	{ /* SW_PRX_LB41 */
+	{ /* NC */
+		.gpio = 119,
+		.settings = { [GPIOMUX_SUSPENDED] = &unused_gpio, },
+	},
+	{ /* ANT_SEL0 */
+		.gpio = 120,
+		.settings = {
+			[GPIOMUX_ACTIVE]    = &gpio_2ma_no_pull_out_low,
+			[GPIOMUX_SUSPENDED] = &gpio_2ma_no_pull_out_low,
+		},
+	},
+	{ /* ANT_SEL1 */
 		.gpio = 121,
 		.settings = {
-			[GPIOMUX_ACTIVE]    = &gpio_2ma_follow_qct,
-			[GPIOMUX_SUSPENDED] = &gpio_2ma_follow_qct,
+			[GPIOMUX_ACTIVE]    = &gpio_2ma_no_pull_out_low,
+			[GPIOMUX_SUSPENDED] = &gpio_2ma_no_pull_out_low,
 		},
 	},
 	{ /* NC */
