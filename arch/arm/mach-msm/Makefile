@@ -194,7 +194,6 @@ ifdef CONFIG_MSM_SUBSYSTEM_RESTART
 	obj-y += subsystem_notif.o
 	obj-y += subsystem_restart.o
 	obj-y += ramdump.o
-	obj-y += ssr_monitor.o
 endif
 obj-$(CONFIG_MSM_SYSMON_COMM) += sysmon.o
 
@@ -320,7 +319,7 @@ else ifdef CONFIG_MACH_SONY_CASTOR_WINDY
 else ifdef CONFIG_MACH_SONY_CANOPUS
 	obj-$(CONFIG_MACH_SONY_CANOPUS) += board-sony_canopus-gpiomux.o bms-batterydata-zock.o board-sony_shinano-nfc.o
 else ifdef CONFIG_MACH_SONY_LEO
-	obj-$(CONFIG_MACH_SONY_LEO) += board-sony_leo-gpiomux.o board-sony_leo_samba-gpiomux-diff.o bms-batterydata-leo.o board-sony_shinano-nfc.o sim_detect_somc.o
+	obj-$(CONFIG_MACH_SONY_LEO) += board-sony_leo-gpiomux.o board-sony_leo_samba-gpiomux-diff.o bms-batterydata-leo.o board-sony_shinano-nfc.o
 else ifdef CONFIG_MACH_SONY_LEO_DCM
 	obj-$(CONFIG_MACH_SONY_LEO_DCM) += board-sony_leo_dcm-gpiomux.o bms-batterydata-leo.o
 else ifdef CONFIG_MACH_SONY_LEO_KDDI

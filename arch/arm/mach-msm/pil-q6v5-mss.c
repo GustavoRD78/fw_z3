@@ -10,9 +10,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * NOTE: This file has been modified by Sony Mobile Communications AB.
- * Modifications are licensed under the License.
  */
 
 #include <linux/init.h>
@@ -36,7 +33,6 @@
 #include <mach/msm_smsm.h>
 #include <mach/ramdump.h>
 #include <mach/msm_smem.h>
-#include <mach/ssr_monitor.h>
 
 #include "peripheral-loader.h"
 #include "pil-q6v5.h"
@@ -84,7 +80,6 @@ static void log_modem_sfr(struct modem_data *drv)
 	}
 
 	strlcpy(reason, smem_reason, min(size, sizeof(reason)));
-	ssr_monitor_store_crashreason(reason);
 	update_crash_reason(drv->subsys, smem_reason, size);
 	pr_err("modem subsystem failure reason: %s.\n", reason);
 
