@@ -54,8 +54,8 @@ endif
    dtb-$(CONFIG_MACH_SONY_CANOPUS)	+= msm8974pro-ab-shinano_canopus.dtb
    dtb-$(CONFIG_MACH_SONY_LEO)		+= msm8974pro-ac-shinano_leo.dtb
    dtb-$(CONFIG_MACH_SONY_LEO_DCM)	+= msm8974pro-ac-shinano_leo_dcm.dtb
+   dtb-$(CONFIG_MACH_SONY_LEO_KDDI)	+= msm8974pro-ac-shinano_leo_kddi.dtb
    dtb-$(CONFIG_MACH_SONY_ARIES)	+= msm8974pro-ac-shinano_aries.dtb
-   dtb-$(CONFIG_MACH_SONY_ARIES_DCM)	+= msm8974pro-ac-shinano_aries_dcm.dtb
    dtb-$(CONFIG_MACH_SONY_SCORPION)	+= msm8974pro-ac-shinano_scorpion.dtb
    dtb-$(CONFIG_MACH_SONY_SCORPION_WINDY)+= apq8074pro-ac-shinano_scorpion_windy.dtb
 
