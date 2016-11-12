@@ -60,6 +60,7 @@ static struct fps_data {
 	u16 fa_last_array_pos;
 	struct fps_array fa[DEFAULT_FPS_ARRAY_SIZE];
 	u16 fps_array_cnt;
+	bool vps_en;
 } vpsd, fpsd;
 
 DEFINE_LED_TRIGGER(bl_led_trigger);
@@ -78,7 +79,7 @@ static int mdss_panel_parse_dt(struct device_node *np,
 				struct mdss_dsi_ctrl_pdata *ctrl_pdata,
 				int driver_ic, char *id_data);
 static int mdss_dsi_panel_pcc_setup(struct mdss_panel_data *pdata);
-static void mdss_dsi_panel_regist_fps_handler(struct mdss_mdp_ctl *ctl);
+static void vsync_handler(struct mdss_mdp_ctl *ctl, ktime_t t);
 
 struct mdss_mdp_vsync_handler vs_handle;
 
@@ -436,10 +437,52 @@ static ssize_t mdss_dsi_panel_frames_per_ksecs(struct device *dev,
 	return scnprintf(buf, PAGE_SIZE, "%i\n", fpsd.fpks);
 }
 
-static ssize_t mdss_dsi_panel_vsyncs_per_ksecs(struct device *dev,
+static ssize_t mdss_dsi_panel_vsyncs_per_ksecs_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	return scnprintf(buf, PAGE_SIZE, "%i\n", vpsd.fpks);
+	if (vpsd.vps_en)
+		return scnprintf(buf, PAGE_SIZE, "%i\n", vpsd.fpks);
+	else
+		return scnprintf(buf, PAGE_SIZE,
+			"This function is invalid now.\n"
+			"Please read again after writing ON.\n");
+}
+
+static ssize_t mdss_dsi_panel_vsyncs_per_ksecs_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	int ret = count;
+	long vps_en;
+	struct mdss_data_type *mdata = mdss_mdp_get_mdata();
+	struct mdss_mdp_ctl *ctl = mdata->ctl_off;
+
+	if (kstrtol(buf, 10, &vps_en)) {
+		dev_err(dev, "%s: Error, buf = %s\n", __func__, buf);
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	vs_handle.vsync_handler = (mdp_vsync_handler_t)vsync_handler;
+	vs_handle.cmd_post_flush = false;
+
+	if (vps_en) {
+		vs_handle.enabled = false;
+		if (!vpsd.vps_en && (ctl->add_vsync_handler)) {
+			ctl->add_vsync_handler(ctl, &vs_handle);
+			vpsd.vps_en = true;
+			pr_info("%s: vsyncs_per_ksecs is valid\n", __func__);
+		}
+	} else {
+		vs_handle.enabled = true;
+		if (vpsd.vps_en && (ctl->remove_vsync_handler)) {
+			ctl->remove_vsync_handler(ctl, &vs_handle);
+			vpsd.vps_en = false;
+			fpsd.fpks = 0;
+			pr_info("%s: vsyncs_per_ksecs is invalid\n", __func__);
+		}
+	}
+exit:
+	return ret;
 }
 
 static ssize_t mdss_dsi_panel_interval_ms_show(struct device *dev,
@@ -711,8 +754,11 @@ static int mdss_dsi_panel_change_fps_fpks_calc
 					TE_PAYLOAD_1(tec_cmds, tec_payload));
 		}
 
-		pr_debug("%s: fps change sequence\n", __func__);
-		mdss_dsi_panel_cmds_send(ctrl_pdata, &ctrl_pdata->fps_cmds);
+		if (!pinfo->lcdc.change_fps_susres_mode) {
+			pr_debug("%s: fps change sequence\n", __func__);
+			mdss_dsi_panel_cmds_send(ctrl_pdata,
+						&ctrl_pdata->fps_cmds);
+		}
 
 		pr_info("%s: change fpks=%d\n", __func__, dfpks);
 
@@ -884,8 +930,9 @@ static struct device_attribute panel_attributes[] = {
 	__ATTR(frame_counter, S_IRUGO, mdss_dsi_panel_frame_counter, NULL),
 	__ATTR(frames_per_ksecs, S_IRUGO,
 				mdss_dsi_panel_frames_per_ksecs, NULL),
-	__ATTR(vsyncs_per_ksecs, S_IRUGO,
-				mdss_dsi_panel_vsyncs_per_ksecs, NULL),
+	__ATTR(vsyncs_per_ksecs, S_IRUSR|S_IRGRP|S_IWUSR|S_IWGRP,
+				mdss_dsi_panel_vsyncs_per_ksecs_show,
+				mdss_dsi_panel_vsyncs_per_ksecs_store),
 	__ATTR(interval_ms, S_IRUGO, mdss_dsi_panel_interval_ms_show, NULL),
 	__ATTR(log_interval, S_IRUGO|S_IWUSR|S_IWGRP,
 					mdss_dsi_panel_log_interval_show,
@@ -923,8 +970,6 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 	struct mipi_panel_info *mipi;
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
 	struct mdss_panel_specific_pdata *spec_pdata = NULL;
-	struct mdss_data_type *mdata = mdss_mdp_get_mdata();
-	struct mdss_mdp_ctl *ctl = mdata->ctl_off;
 
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
@@ -965,9 +1010,6 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 		spec_pdata->cabc_active = 1;
 	}
 
-	if (ctl->add_vsync_handler)
-		mdss_dsi_panel_regist_fps_handler(ctl);
-
 	if (spec_pdata->init_cmds.cmd_cnt) {
 		pr_debug("%s: init (exit sleep) sequence\n", __func__);
 		mdss_dsi_panel_cmds_send(ctrl_pdata, &spec_pdata->init_cmds);
@@ -999,6 +1041,8 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 	struct mipi_panel_info *mipi;
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
 	struct mdss_panel_specific_pdata *spec_pdata = NULL;
+	struct mdss_data_type *mdata = mdss_mdp_get_mdata();
+	struct mdss_mdp_ctl *ctl = mdata->ctl_off;
 
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
@@ -1052,6 +1096,17 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 			spec_pdata->new_vfp))
 		ctrl_pdata->panel_data.panel_info.lcdc.v_front_porch =
 			spec_pdata->new_vfp;
+
+	vs_handle.vsync_handler = (mdp_vsync_handler_t)vsync_handler;
+	vs_handle.cmd_post_flush = false;
+	vs_handle.enabled = true;
+	if (vpsd.vps_en && (ctl->remove_vsync_handler)) {
+		ctl->remove_vsync_handler(ctl, &vs_handle);
+		vpsd.vps_en = false;
+		fpsd.fpks = 0;
+		pr_info("%s: vsyncs_per_ksecs is invalid\n", __func__);
+	}
+
 	pr_debug("%s: Done\n", __func__);
 
 	return 0;
@@ -1364,18 +1419,13 @@ static void mdss_dsi_panel_fps_data_init(struct fps_data *fps)
 	fps->log_interval = DEFAULT_FPS_LOG_INTERVAL;
 	fps->fpks = 0;
 	fps->fa_last_array_pos = 0;
+	fps->vps_en = false;
 	getrawmonotonic(&fps->timestamp_last);
 	mutex_init(&fps->fps_lock);
 }
 
 int mdss_dsi_panel_fps_data_update(struct msm_fb_data_type *mfd)
 {
-	struct mdss_data_type *mdata = mdss_mdp_get_mdata();
-	struct mdss_mdp_ctl *ctl = mdata->ctl_off;
-
-	if (ctl->add_vsync_handler && (vs_handle.vsync_handler == NULL))
-		mdss_dsi_panel_regist_fps_handler(ctl);
-
 	/* Only count fps on primary display */
 	if (mfd->index == 0)
 		update_fps_data(&fpsd);
@@ -1390,21 +1440,11 @@ static void mdss_dsi_panel_vps_data_update(struct msm_fb_data_type *mfd)
 		update_fps_data(&vpsd);
 }
 
-void vsync_handler(struct mdss_mdp_ctl *ctl, ktime_t t)
+static void vsync_handler(struct mdss_mdp_ctl *ctl, ktime_t t)
 {
 	struct msm_fb_data_type *mfd = ctl->mfd;
 
 	mdss_dsi_panel_vps_data_update(mfd);
-}
-
-static void mdss_dsi_panel_regist_fps_handler(struct mdss_mdp_ctl *ctl)
-{
-	vs_handle.vsync_handler = (mdp_vsync_handler_t)vsync_handler;
-	vs_handle.cmd_post_flush = false;
-	vs_handle.enabled = false;
-
-	if (ctl->add_vsync_handler)
-		ctl->add_vsync_handler(ctl, &vs_handle);
 }
 
 static void conv_uv_data(char *data, int param_type, int *u_data, int *v_data)
@@ -2537,6 +2577,8 @@ static int mdss_panel_parse_dt(struct device_node *np,
 		rc = of_property_read_u32(next,
 			"somc,te-c-payload-num", &tmp);
 		pinfo->lcdc.te_c_payload_num =  !rc ? tmp : 0;
+		pinfo->lcdc.change_fps_susres_mode = of_property_read_bool(np,
+			"somc,change-fps-suspend-resume-mode");
 
 		break;
 	}
