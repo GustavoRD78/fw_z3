@@ -56,6 +56,7 @@
 			pad,stage0-offset_l_clamp = <0x0018>;
 			pad,stage0-offset_h_clamp = <0x000A>;
 			pad,stage0-hysterisis = <40>;
+			pad,stage0-high_th_offset = <0>;
 			pad,stage1-connect1 = <0x3FFF>;
 			pad,stage1-connect2 = <0x1BFF>;
 			pad,stage1-afe = <0x1200>;
@@ -65,6 +66,7 @@
 			pad,stage1-offset_l_clamp = <0x0030>;
 			pad,stage1-offset_h_clamp = <0x000A>;
 			pad,stage1-hysterisis = <10>;
+			pad,stage1-high_th_offset = <0>;
 			status = "ok";
 		};
 	};

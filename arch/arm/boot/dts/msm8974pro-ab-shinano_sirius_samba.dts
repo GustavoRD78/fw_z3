@@ -28,5 +28,6 @@
 	model = "SoMC Sirius SAMBA";
 	compatible = "somc,sirius-samba", "qcom,msm8974";
         qcom,board-id = <8 1>;
-	somc,space-no = "1278-9584";
+	somc,space-no = "1278-9584",
+			"1278-9462";
 };
