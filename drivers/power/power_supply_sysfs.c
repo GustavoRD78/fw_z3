@@ -5,7 +5,7 @@
  *  Copyright © 2007  Anton Vorontsov <cbou@mail.ru>
  *  Copyright © 2004  Szabolcs Gyurko
  *  Copyright © 2003  Ian Molton <spyro@f2s.com>
- *  Copyright (c) 2013 Sony Mobile Communications Inc.
+ *  Copyright (C) 2013-2014 Sony Mobile Communications AB.
  *
  *  Modified: 2004, Oct     Szabolcs Gyurko
  *
@@ -117,15 +117,6 @@ static ssize_t power_supply_store_property(struct device *dev,
 	union power_supply_propval value;
 	long long_val;
 
-	if (off == POWER_SUPPLY_PROP_LEARNED_DATA) {
-		value.strval = buf;
-		ret = psy->set_property(psy, off, &value);
-		if (ret < 0)
-			return ret;
-		else
-			return count;
-	}
-
 	/* TODO: support other types than int */
 	ret = strict_strtol(buf, 10, &long_val);
 	if (ret < 0)
@@ -200,14 +191,11 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(enable_shutdown_at_low_battery),
 	POWER_SUPPLY_ATTR(batt_aging),
 	POWER_SUPPLY_ATTR(enable_llk),
-	POWER_SUPPLY_ATTR(llk_socmax),
-	POWER_SUPPLY_ATTR(llk_socmin),
 	POWER_SUPPLY_ATTR(batt_id),
 	/* Properties of type `const char *' */
 	POWER_SUPPLY_ATTR(model_name),
 	POWER_SUPPLY_ATTR(manufacturer),
 	POWER_SUPPLY_ATTR(serial_number),
-	POWER_SUPPLY_ATTR(learned_data),
 };
 
 static struct attribute *

@@ -13,9 +13,7 @@
  *  Per cpu hot/cold page lists, bulk allocation, Martin J. Bligh, Sept 2002
  *          (lots of bits borrowed from Ingo Molnar & Andrew Morton)
  *
- *  NOTE: This file has been modified by Sony Mobile Communications Inc.
- *  Modifications are Copyright (c) 2013 Sony Mobile Communications Inc,
- *  and licensed under the license of the file.
+ * Copyright (c) 2013 Sony Mobile Communications AB.
  */
 
 #include <linux/stddef.h>
@@ -2066,7 +2064,6 @@ void warn_alloc_failed(gfp_t gfp_mask, int order, const char *fmt, ...)
 	pr_warn("%s: page allocation failure: order:%d, mode:0x%x\n",
 		current->comm, order, gfp_mask);
 
-	trace_mm_page_alloc_fail(order);
 	dump_stack();
 	if (!should_suppress_show_mem())
 		show_mem(filter);
@@ -2641,9 +2638,6 @@ retry_cpuset:
 				preferred_zone, migratetype);
 
 	trace_mm_page_alloc(page, order, gfp_mask, migratetype);
-	if (order > 1)
-		trace_mm_page_alloc_highorder(page, order,
-					      gfp_mask, migratetype);
 
 out:
 	/*

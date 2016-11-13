@@ -1315,7 +1315,10 @@ static int mmc_reboot_notify(struct notifier_block *notify_block,
 	struct mmc_card *card = container_of(
 			notify_block, struct mmc_card, reboot_notify);
 
-	card->pon_type = (event != SYS_RESTART) ? MMC_LONG_PON : MMC_SHRT_PON;
+	if (event != SYS_RESTART)
+		card->issue_long_pon = true;
+	else
+		card->issue_long_pon = false;
 
 	return NOTIFY_OK;
 }
@@ -1461,14 +1464,6 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
 			!strncmp(card->cid.prod_name, prod_name_hynix_HBG4e_05,
 					 sizeof(prod_name_hynix_HBG4e_05))) {
 			host->caps2 &= ~MMC_CAP2_STOP_REQUEST;
-		}
-#endif
-
-#ifdef CONFIG_MMC_ENABLE_CACHECTRL_SKHYNIX
-		if (card->cid.manfid == CID_MANFID_HYNIX &&
-			!strncmp(card->cid.prod_name, prod_name_hynix_HBG4e_05,
-					 sizeof(prod_name_hynix_HBG4e_05))) {
-			host->caps2 |= MMC_CAP2_CACHE_CTRL;
 		}
 #endif
 	}
@@ -1730,24 +1725,19 @@ static int mmc_poweroff_notify(struct mmc_card *card, unsigned int notify_type)
 	return err;
 }
 
-int mmc_send_pon(struct mmc_card *card)
+int mmc_send_long_pon(struct mmc_card *card)
 {
 	int err = 0;
 	struct mmc_host *host = card->host;
 
-	if (!mmc_can_poweroff_notify(card))
-		goto out;
-
 	mmc_claim_host(host);
-	if (card->pon_type & MMC_LONG_PON)
+	if (card->issue_long_pon && mmc_can_poweroff_notify(card)) {
 		err = mmc_poweroff_notify(host->card, EXT_CSD_POWER_OFF_LONG);
-	else if (card->pon_type & MMC_SHRT_PON)
-		err = mmc_poweroff_notify(host->card, EXT_CSD_POWER_OFF_SHORT);
-	if (err)
-		pr_warn("%s: error %d sending PON type %u",
-			mmc_hostname(host), err, card->pon_type);
+		if (err)
+			pr_warning("%s: error %d sending Long PON",
+					mmc_hostname(host), err);
+	}
 	mmc_release_host(host);
-out:
 	return err;
 }
 
@@ -1962,8 +1952,6 @@ out:
 	if (mmc_card_is_sleep(host->card)) {
 		mmc_restore_ios(host);
 		err = mmc_card_awake(host);
-		if (!err)
-			err = mmc_cache_ctrl(host, 1);
 	} else
 		err = mmc_init_card(host, host->ocr, host->card);
 #endif
