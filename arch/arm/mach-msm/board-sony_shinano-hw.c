@@ -33,7 +33,6 @@ static const struct hw_map sony_hw_map[] = {
 	{ "1276-9754", HW_SIRIUS },
 	{ "1278-9570", HW_SIRIUS },
 	{ "1278-9584", HW_SIRIUS_SAMBA },
-	{ "1278-9462", HW_SIRIUS_SAMBA },
 };
 
 static int _sony_hw = HW_UNKNOWN;

@@ -1,5 +1,5 @@
 /* Copyright (c) 2011-2013, The Linux Foundation. All rights reserved.
- * Copyright (C) 2014 Sony Mobile Communications Inc.
+ * Copyright (C) 2014 Sony Mobile Communications AB.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -100,6 +100,15 @@ static struct sf_lut rbatt_sf = {
 	}
 };
 
+struct bms_battery_data oem_batt_data = {
+	.fcc			= 4633,
+	.fcc_temp_lut		= &fcc_temp,
+	.pc_temp_ocv_lut	= &pc_temp_ocv,
+	.rbatt_sf_lut		= &rbatt_sf,
+	.default_rbatt_mohm	= 100,
+	.flat_ocv_threshold_uv	= 3800000,
+};
+
 struct bms_battery_data oem_batt_data_somc[BATT_VENDOR_NUM] = {
 	/* BATT_VENDOR_TDK */
 	{
@@ -126,6 +135,3 @@ struct bms_battery_data oem_batt_data_somc[BATT_VENDOR_NUM] = {
 	{
 	},
 };
-
-struct bms_battery_data *bms_batt_data = &oem_batt_data_somc[0];
-int bms_batt_data_num = BATT_VENDOR_NUM;
