@@ -154,7 +154,7 @@
 			};
 			eprom@a4 {
 				addr = <0xa4>;
-				data = <0x02>;
+				data = <0x72>;
 			};
 			eprom@a5 {
 				addr = <0xa5>;
