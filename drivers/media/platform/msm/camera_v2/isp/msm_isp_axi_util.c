@@ -872,6 +872,18 @@ static int msm_isp_cfg_ping_pong_address(struct vfe_device *vfe_dev,
 	uint32_t pingpong_bit = 0;
 	uint32_t bufq_handle = stream_info->bufq_handle;
 	uint32_t stream_idx = HANDLE_TO_IDX(stream_info->stream_handle);
+#if defined(CONFIG_SONY_CAM_V4L2)
+	uint32_t frame_id = 0;
+
+	frame_id = vfe_dev->axi_data.
+			src_info[SRC_TO_INTF(stream_info->stream_src)].frame_id;
+	if (frame_id && (stream_info->frame_id >= frame_id)) {
+		pr_err("%s: duplicate frame_id, Session frm id %d cur frm id %d\n",
+				__func__, frame_id, stream_info->frame_id);
+		vfe_dev->error_info.stream_framedrop_count[stream_idx]++;
+		return rc;
+	}
+#endif
 
 	rc = vfe_dev->buf_mgr->ops->get_buf(vfe_dev->buf_mgr,
 			vfe_dev->pdev->id, bufq_handle, &buf);
@@ -1283,6 +1295,9 @@ static int msm_isp_start_axi_stream(struct vfe_device *vfe_dev,
 		}
 		stream_info = &axi_data->stream_info[
 			HANDLE_TO_IDX(stream_cfg_cmd->stream_handle[i])];
+#if defined(CONFIG_SONY_CAM_V4L2)
+		stream_info->frame_id = 0;
+#endif
 		if (SRC_TO_INTF(stream_info->stream_src) < VFE_SRC_MAX)
 			src_state = axi_data->src_info[
 				SRC_TO_INTF(stream_info->stream_src)].active;
@@ -1561,6 +1576,9 @@ void msm_isp_process_axi_irq(struct vfe_device *vfe_dev,
 	int i, rc = 0;
 	struct msm_isp_buffer *done_buf = NULL;
 	uint32_t comp_mask = 0, wm_mask = 0;
+#if defined(CONFIG_SONY_CAM_V4L2)
+	uint32_t frame_id = 0;
+#endif
 	uint32_t pingpong_status, stream_idx;
 	struct msm_vfe_axi_stream *stream_info;
 	struct msm_vfe_axi_composite_info *comp_info;
@@ -1579,6 +1597,10 @@ void msm_isp_process_axi_irq(struct vfe_device *vfe_dev,
 		vfe_dev->hw_info->vfe_ops.axi_ops.get_pingpong_status(vfe_dev);
 
 	msm_isp_get_buffer_ts(vfe_dev, ts, &buf_ts);
+#if defined(CONFIG_SONY_CAM_V4L2)
+	frame_id = vfe_dev->axi_data.
+			src_info[SRC_TO_INTF(stream_info->stream_src)].frame_id;
+#endif
 
 	for (i = 0; i < axi_data->hw_info->num_comp_mask; i++) {
 		comp_info = &axi_data->composite_info[i];
@@ -1594,7 +1616,9 @@ void msm_isp_process_axi_irq(struct vfe_device *vfe_dev,
 				ISP_DBG("%s: stream%d frame id: 0x%x\n",
 					__func__,
 					stream_idx, stream_info->frame_id);
+#if !defined(CONFIG_SONY_CAM_V4L2)
 				stream_info->frame_id++;
+#endif
 
 				if (stream_info->stream_type == BURST_STREAM)
 					stream_info->
@@ -1609,6 +1633,9 @@ void msm_isp_process_axi_irq(struct vfe_device *vfe_dev,
 					rc = msm_isp_cfg_ping_pong_address(
 							vfe_dev, stream_info,
 							pingpong_status);
+#if defined(CONFIG_SONY_CAM_V4L2)
+					stream_info->frame_id = frame_id;
+#endif
 				}
 				if (done_buf && !rc)
 					msm_isp_process_done_buf(vfe_dev,
@@ -1630,7 +1657,9 @@ void msm_isp_process_axi_irq(struct vfe_device *vfe_dev,
 			ISP_DBG("%s: stream%d frame id: 0x%x\n",
 				__func__,
 				stream_idx, stream_info->frame_id);
+#if !defined(CONFIG_SONY_CAM_V4L2)
 			stream_info->frame_id++;
+#endif
 
 			if (stream_info->stream_type == BURST_STREAM)
 				stream_info->runtime_num_burst_capture--;
@@ -1641,6 +1670,9 @@ void msm_isp_process_axi_irq(struct vfe_device *vfe_dev,
 				stream_info->runtime_num_burst_capture > 1) {
 				rc = msm_isp_cfg_ping_pong_address(vfe_dev,
 					stream_info, pingpong_status);
+#if defined(CONFIG_SONY_CAM_V4L2)
+				stream_info->frame_id = frame_id;
+#endif
 			}
 			if (done_buf && !rc)
 				msm_isp_process_done_buf(vfe_dev,
