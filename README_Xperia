@@ -5,17 +5,9 @@
 
 Configuration files can be found in arch/arm/configs.
 
-    Xperia Z2 D6543                                                             => shinano_sirius_defconfig
-    Xperia Z3 Dual D6683                                                        => shinano_leo_dsds_defconfig
-    Xperia Z3 D6603                                                             => shinano_leo_defconfig
-    Xperia Z3 Tablet Compact SGP611                                             => shinano_scorpion_windy_defconfig
-    Xperia Z3 Compact D5803                                                     => shinano_aries_defconfig
-    Xperia Z2 Tablet SGP511                                                     => shinano_castor_windy_defconfig
-    Xperia Z2a D6563                                                            => shinano_canopus_defconfig
-    Xperia Z2 Tablet SGP541                                                     => shinano_castor_defconfig
-    Xperia Z2 Tablet SGP551                                                     => shinano_castor_brazil_defconfig
-    Xperia Z3 Tablet Compact SGP621                                             => shinano_scorpion_defconfig
-
+    Xperia Z3 (Leo/SO-01G)                                                      => shinano_leo_dcm_defconfig
+    Xperia Z3 Compact (Aries/SO-02G)                                            => shinano_aries_dcm_defconfig
+    Xperia A4 (Ajisai/SO-04G)                                                   => shinano_ajisai_dcm_defconfig
 
 How to build your kernel:
 
@@ -49,11 +41,11 @@ How to build your kernel:
       NOTE: Please set the prefix of the ARM cross-compiler.
             ex) arm-linux-androideabi-
 
-    $ make shinano_sirius_defconfig
+    $ make O=<path-of-output> shinano_leo_dcm_defconfig
 
-    $ make
+    $ make O=<path-of-output>
 
-    You can see arch/arm/boot/zImage-dtb if you succeed in building the kernel.
+    You can see <path-of-output>/arch/arm/boot/zImage-dtb if you succeed in building the kernel.
 
   Step 2: Prepare Device Tree Image (dt.img)
     (In the Linux Kernel directory)

@@ -1,12 +1,16 @@
 /* drivers/misc/felica_snfc/cxd224x-i2c.c
  *
  * Copyright (C) 2013 Sony Corporation.
- * Copyright (C) 2014 Sony Mobile Communications AB.
+ * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as
  * published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
+ *
+ * NOTE: This file has been modified by Sony Mobile Communications Inc.
+ * Modifications are Copyright (c) 2015 Sony Mobile Communications Inc,
+ * and licensed under the license of the file.
  */
 
 #include <linux/clk.h>
@@ -38,6 +42,8 @@
 
 #define CXD224X_WAKE_LOCK_TIMEOUT	3
 #define CXD224X_WAKE_LOCK_NAME	CXD224X_DEVICE_NAME
+#define CXD224X_WAKE_LOCK_TIMEOUT_LP	3
+#define CXD224X_WAKE_LOCK_NAME_LP "cxd224x-i2c-lp"
 
 struct cxd224x_dev {
 	wait_queue_head_t read_wq;
@@ -50,6 +56,7 @@ struct cxd224x_dev {
 	spinlock_t irq_enabled_lock;
 	unsigned int count_irq;
 	struct wake_lock wakelock;
+	struct wake_lock wakelock_lp;
 };
 
 static void cxd224x_init_stat(struct cxd224x_dev *cxd224x_dev)
@@ -263,8 +270,16 @@ static ssize_t cxd224x_dev_wake_ctl_store(struct device *dev,
 
 	memcpy(&mode, buf, size);
 	value = mode ? 0 : 1;
-	gpio_set_value_cansleep(cxd224x_dev->wake_gpio, value);
-
+	if (1 == value) {
+		wake_lock_timeout(&cxd224x_dev->wakelock_lp,
+			CXD224X_WAKE_LOCK_TIMEOUT_LP*HZ);
+		gpio_set_value_cansleep(cxd224x_dev->wake_gpio, 1);
+	} else if (0 == value) {
+		gpio_set_value_cansleep(cxd224x_dev->wake_gpio, 0);
+		wake_unlock(&cxd224x_dev->wakelock_lp);
+	} else {
+		/* do nothing */
+	}
 	return size;
 
 err:
@@ -421,6 +436,8 @@ static int cxd224x_probe(struct i2c_client *client,
 	cxd224x_dev->client = client;
 	wake_lock_init(&cxd224x_dev->wakelock, WAKE_LOCK_SUSPEND,
 			CXD224X_WAKE_LOCK_NAME);
+	wake_lock_init(&cxd224x_dev->wakelock_lp, WAKE_LOCK_SUSPEND,
+			CXD224X_WAKE_LOCK_NAME_LP);
 
 	/* init mutex and queues */
 	init_waitqueue_head(&cxd224x_dev->read_wq);
@@ -502,6 +519,7 @@ static int cxd224x_remove(struct i2c_client *client)
 	misc_deregister(&cxd224x_dev->cxd224x_device);
 	mutex_destroy(&cxd224x_dev->read_mutex);
 	wake_lock_destroy(&cxd224x_dev->wakelock);
+	wake_lock_destroy(&cxd224x_dev->wakelock_lp);
 	i2c_set_clientdata(client, NULL);
 	kzfree(cxd224x_dev);
 	cxd224x_gpio_free(&client->dev, client->dev.platform_data);

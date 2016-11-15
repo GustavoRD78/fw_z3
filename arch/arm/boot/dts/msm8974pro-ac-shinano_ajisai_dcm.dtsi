@@ -80,7 +80,6 @@
 };
 
 &pm8941_chg {
-	qcom,enable-llk-fake-capacity;
 	qcom,aging-vddmax-mv = <4300>;
 	qcom,aging-warm-bat-mv = <4200>;
 	qcom,aging-cool-bat-mv = <4300>;
@@ -90,4 +89,8 @@
 	qcom,aging-ibatmax-ma = <1300>;
 	qcom,aging-warm-ibatmax-ma = <750>;
 	qcom,aging-cool-ibatmax-ma = <750>;
+};
+
+&pm8941_chg {
+	qcom,enable-llk-fake-capacity;
 };

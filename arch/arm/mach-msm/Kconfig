@@ -1148,47 +1148,20 @@ config MACH_SONY_SIRIUS
 	  If you enable this config,
 	  Please use SONY Mobile source tree.
 
-config MACH_SONY_CASTOR
-	depends on ARCH_MSM8974
-	bool "Sony Mobile Castor"
-	help
-	  Support for the SONY Mobile Castor device.
-	  It is based on QCOM MSM8974 AB chipset.
-	  If you enable this config,
-	  Please use SONY Mobile source tree.
-
-config MACH_SONY_CASTOR_BRAZIL
-	depends on ARCH_MSM8974
-	bool "Sony Mobile Castor Brazil"
-	help
-	  Support for the SONY Mobile Castor Brazil device.
-	  It is based on QCOM MSM8974 AB chipset.
-	  If you enable this config,
-	  Please use SONY Mobile source tree.
-
-config MACH_SONY_CASTOR_WINDY
-	depends on ARCH_MSM8974
-	bool "Sony Mobile Castor Windy"
-	help
-	  Support for the SONY Mobile Castor Windy device.
-	  It is based on QCOM APQ8074 AB chipset.
-	  If you enable this config,
-	  Please use SONY Mobile source tree.
-
-config MACH_SONY_CANOPUS
-	depends on ARCH_MSM8974
-	bool "Sony Mobile Canopus"
-	help
-	  Support for the SONY Mobile Canopus device.
-	  It is based on QCOM MSM8974 AB chipset.
-	  If you enable this config,
-	  Please use SONY Mobile source tree.
-
 config MACH_SONY_LEO
 	depends on ARCH_MSM8974
 	bool "Sony Mobile Leo"
 	help
 	  Support for the SONY Mobile Leo device.
+	  It is based on QCOM MSM8974 AC chipset.
+	  If you enable this config,
+	  Please use SONY Mobile source tree.
+
+config MACH_SONY_LEO_DCM
+	depends on ARCH_MSM8974
+	bool "Sony Mobile Leo Docomo"
+	help
+	  Support for the SONY Mobile Leo Docomo device.
 	  It is based on QCOM MSM8974 AC chipset.
 	  If you enable this config,
 	  Please use SONY Mobile source tree.
@@ -1211,21 +1184,21 @@ config MACH_SONY_ARIES
 	  If you enable this config,
 	  Please use SONY Mobile source tree.
 
-config MACH_SONY_SCORPION
+config MACH_SONY_ARIES_DCM
 	depends on ARCH_MSM8974
-	bool "Sony Mobile Scorpion"
+	bool "Sony Mobile Aries Docomo"
 	help
-	  Support for the SONY Mobile Scorpion device.
+	  Support for the SONY Mobile Aries Docomo device.
 	  It is based on QCOM MSM8974 AC chipset.
 	  If you enable this config,
 	  Please use SONY Mobile source tree.
 
-config MACH_SONY_SCORPION_WINDY
+config MACH_SONY_AJISAI_DCM
 	depends on ARCH_MSM8974
-	bool "Sony Mobile Scorpion Windy"
+	bool "Sony Mobile Ajisai Docomo"
 	help
-	  Support for the SONY Mobile Scorpion Windy device.
-	  It is based on QCOM APQ8074 AC chipset.
+	  Support for the SONY Mobile Ajisai Docomo device.
+	  It is based on QCOM MSM8974 AC chipset.
 	  If you enable this config,
 	  Please use SONY Mobile source tree.
 
