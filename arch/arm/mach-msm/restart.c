@@ -270,7 +270,7 @@ static void msm_restart_prepare(const char *cmd)
 		if (!strncmp(cmd, "bootloader", 10)) {
 			__raw_writel(0x77665500, restart_reason);
 		} else if (!strncmp(cmd, "recovery", 8)) {
-			__raw_writel(0x77665502, restart_reason);
+			__raw_writel(0x6f656d46, restart_reason);
 		} else if (!strcmp(cmd, "rtc")) {
 			__raw_writel(0x77665503, restart_reason);
 		} else if (!strncmp(cmd, "s1bootloader", 12)) {
@@ -285,7 +285,7 @@ static void msm_restart_prepare(const char *cmd)
 			__raw_writel(0x77665501, restart_reason);
 		}
 	} else {
-		__raw_writel(0x776655AA, restart_reason);
+		__raw_writel(0x77665501, restart_reason);
 	}
 	if (in_panic)
 		__raw_writel(0xC0DEDEAD, restart_reason);

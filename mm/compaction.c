@@ -786,15 +786,8 @@ typedef enum {
 } isolate_migrate_t;
 
 /*
- * Allow userspace to control policy on scanning the unevictable LRU for
- * compactable pages.
- */
-int sysctl_compact_unevictable_allowed __read_mostly = 1;
-
-/*
- * Isolate all pages that can be migrated from the first suitable block,
- * starting at the block pointed to by the migrate scanner pfn within
- * compact_control.
+ * Isolate all pages that can be migrated from the block pointed to by
+ * the migrate scanner within compact_control.
  */
 static isolate_migrate_t isolate_migratepages(struct zone *zone,
 					struct compact_control *cc)
@@ -814,8 +807,7 @@ static isolate_migrate_t isolate_migratepages(struct zone *zone,
 	}
 
 	/* Perform the isolation */
-	low_pfn = isolate_migratepages_range(zone, cc, low_pfn, end_pfn,
-					!!sysctl_compact_unevictable_allowed);
+	low_pfn = isolate_migratepages_range(zone, cc, low_pfn, end_pfn, false);
 	if (!low_pfn || cc->contended)
 		return ISOLATE_ABORT;
 
@@ -870,24 +862,13 @@ static int compact_finished(struct zone *zone,
 	/* Direct compactor: Is a suitable page free? */
 	for (order = cc->order; order < MAX_ORDER; order++) {
 		struct free_area *area = &zone->free_area[order];
-		bool can_steal;
 
 		/* Job done if page is free of the right migratetype */
 		if (!list_empty(&area->free_list[cc->migratetype]))
 			return COMPACT_PARTIAL;
 
-#ifdef CONFIG_CMA
-		/* MIGRATE_MOVABLE can fallback on MIGRATE_CMA */
-		if (cc->migratetype == MIGRATE_MOVABLE &&
-			!list_empty(&area->free_list[MIGRATE_CMA]))
-			return COMPACT_PARTIAL;
-#endif
-		/*
-		 * Job done if allocation would steal freepages from
-		 * other migratetype buddy lists.
-		 */
-		if (find_suitable_fallback(area, order, cc->migratetype,
-			true, &can_steal) != -1)
+		/* Job done if allocation would set block type */
+		if (cc->order >= pageblock_order && area->nr_free)
 			return COMPACT_PARTIAL;
 	}
 
@@ -936,10 +917,11 @@ unsigned long compaction_suitable(struct zone *zone, int order)
 	fragindex = fragmentation_index(zone, order);
 	if (fragindex >= 0 && fragindex <= sysctl_extfrag_threshold)
 		return COMPACT_SKIPPED;
-	/* fragmentation_index() does not take migratetype into account.
-	 * We frequently have free high-order pages of the CMA migratetype,
-	 * but these can't be used to satisfy requests for unmovable allocations
-	 */
+
+	if (fragindex == -1000 && zone_watermark_ok(zone, order, watermark,
+	    0, 0))
+		return COMPACT_PARTIAL;
+
 	return COMPACT_CONTINUE;
 }
 
