@@ -661,23 +661,14 @@ config QPNP_MISC
 	  is available on the current PMIC chip.
 
 config NFC_PN547
-	bool "NXP PN547 NFC Controller Driver"
+	tristate "NFC driver for PN547"
 	depends on I2C
 	default n
 	help
-	  NXP PN547 Near Field Communication controller support.
-	  This option enables device driver support for the NFC.
-	  It is used by many services. NFC is fully controlled using I2C
-	  to communicate the AP chip.
-
-config NFC_PN547_PMC8974_CLK_REQ
-	bool "NXP PN547 NFC Controller Driver"
-	depends on I2C
-	default n
-	help
-	  PM8941 Clock request for NXP PN547 Near Field
-	  Communication controller support.
-	  This option enables d1 clock for NFC.
+	  This option enables device driver for PN547.
+	  GPIO, PMIC GPIO and MPP configurations are controlled.
+	  The sysfs files provides the interface to send and receive
+	  the data, response and notification.
 
 config USB_HSIC_SMSC_HUB
 	tristate "Support for HSIC based MSM on-chip SMSC3503 HUB"
@@ -699,6 +690,12 @@ config TI_DRV2667
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called ti_drv2667.
+
+config UID_CPUTIME
+	tristate "Per-UID cpu time statistics"
+	depends on PROFILING
+	help
+	  Per UID based cpu time statistics exported to /proc/uid_cputime
 
 config CRASH_LAST_LOGS
 	bool "export kernel and amss logs in proc"
@@ -796,12 +793,6 @@ config SIM_DETECT
 	  if you want to support SIM_DETECT as detection device.
 	  This driver can be used for sending notifications via
 	  switch_class when sim card is inserted or removed.
-
-config UID_CPUTIME
-	tristate "Per-UID cpu time statistics"
-	depends on PROFILING
-	help
-	  Per UID based cpu time statistics exported to /proc/uid_cputime
 
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"

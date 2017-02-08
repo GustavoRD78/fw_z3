@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, The Linux Foundation. All rights reserved.
  * Copyright (c) 2014 Sony Mobile Communications Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 #include "wcdcal-hwdep.h"
 
 const int cal_size_info[WCD9XXX_MAX_CAL] = {
-	[WCD9XXX_ANC_CAL] = 12288,
+	[WCD9XXX_ANC_CAL] = 24576,
 	[WCD9XXX_MBHC_CAL] = 4096,
 	[WCD9XXX_MAD_CAL] = 4096,
 };
@@ -84,8 +84,7 @@ static int wcdcal_hwdep_ioctl_shared(struct snd_hwdep *hw,
 		return -EFAULT;
 	}
 	data = fw[fw_user.cal_type]->data;
-	if (copy_from_user(data, fw_user.buffer, fw_user.size))
-		return -EFAULT;
+	memcpy(data, fw_user.buffer, fw_user.size);
 	fw[fw_user.cal_type]->size = fw_user.size;
 	mutex_lock(&fw_data->lock);
 	set_bit(WCDCAL_RECIEVED, &fw_data->wcdcal_state[fw_user.cal_type]);

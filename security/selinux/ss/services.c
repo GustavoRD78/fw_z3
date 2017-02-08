@@ -49,7 +49,6 @@
 #include <linux/sched.h>
 #include <linux/audit.h>
 #include <linux/mutex.h>
-#include <linux/ratelimit.h>
 #include <linux/selinux.h>
 #include <linux/flex_array.h>
 #include <linux/vmalloc.h>
@@ -1027,7 +1026,8 @@ void security_compute_operation(u32 ssid,
 
 
 	if (unlikely(!tclass || tclass > policydb.p_classes.nprim)) {
-		pr_warn_ratelimited("SELinux:  Invalid class %hu\n", tclass);
+		if (printk_ratelimit())
+			printk(KERN_WARNING "SELinux:  Invalid class %hu\n", tclass);
 		goto out;
 	}
 

@@ -10,11 +10,10 @@
 
 #include <linux/delay.h>
 #include <linux/device.h>
-#include <linux/i2c.h>
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
 #include <linux/qpnp/pin.h>
-#include <linux/pn547.h>
+#include <mach/board-nfc.h>
 
 #define WAIT_HW_CONFIG_ENABLED	100
 #define WAIT_GPIO_TOGGLE	10

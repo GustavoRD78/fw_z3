@@ -1,7 +1,6 @@
 /* linux/drivers/input/touchscreen/clearpad_core.c
  *
- * Copyright (C) 2010 Sony Ericsson Mobile Communications AB.
- * Copyright (C) 2012-2015 Sony Mobile Communications AB.
+ * Copyright (C) 2010 Sony Mobile Communications Inc.
  *
  * Author: Courtney Cavin <courtney.cavin@sonyericsson.com>
  *         Yusuke Yoshimura <Yusuke.Yoshimura@sonyericsson.com>
@@ -32,10 +31,6 @@
 #include <linux/uaccess.h>
 #endif
 #include <linux/sched.h>
-#ifdef CONFIG_FB
-#include <linux/fb.h>
-#include <linux/notifier.h>
-#endif
 #ifdef CONFIG_ARM
 #include <asm/mach-types.h>
 #endif
@@ -477,6 +472,7 @@ struct clearpad_wakeup_gesture_t {
 	bool large_panel;
 	unsigned long time_started;
 	u32 timeout_delay;
+	bool suspend_with_enabled;
 };
 
 enum clearpad_hwtest_data_type_e {
@@ -571,11 +567,6 @@ struct clearpad_t {
 	int irq_mask;
 
 	int screen_status;
-#ifdef CONFIG_FB
-	struct notifier_block fb_nb;
-	struct work_struct ws_blank;
-	struct work_struct ws_unblank;
-#endif
 
 	char fwname[SYN_STRING_LENGTH + 1];
 	char result_info[SYN_STRING_LENGTH + 1];
@@ -1414,6 +1405,10 @@ static int clearpad_initialize(struct clearpad_t *this)
 	u8 buf[4];
 	struct clearpad_device_info_t *info = &this->device_info;
 
+	rc = clearpad_set_page(this, 0);
+	if (rc)
+		goto exit;
+
 	rc = clearpad_read_pdt(this);
 	if (rc)
 		goto exit;
@@ -2245,7 +2240,7 @@ static int clearpad_set_normal_mode(struct clearpad_t *this)
 
 	dev_dbg(&this->pdev->dev, "%s\n", __func__);
 
-	if (this->wakeup_gesture.enabled) {
+	if (this->wakeup_gesture.suspend_with_enabled) {
 		if (!this->wakeup_gesture.lpm_disabled) {
 			rc = clearpad_vreg_suspend(this, 0);
 			if (rc)
@@ -2379,6 +2374,7 @@ static int clearpad_set_suspend_mode(struct clearpad_t *this)
 			if (rc)
 				goto exit;
 		}
+		this->wakeup_gesture.suspend_with_enabled = true;
 	} else {
 		rc = clearpad_put_bit(SYNF(this, F01_RMI, CTRL, 0x00),
 			DEVICE_CONTROL_SLEEP_MODE_SENSOR_SLEEP,
@@ -2394,6 +2390,7 @@ static int clearpad_set_suspend_mode(struct clearpad_t *this)
 		rc = clearpad_vreg_suspend(this, 1);
 		if (rc)
 			goto exit;
+		this->wakeup_gesture.suspend_with_enabled = false;
 	}
 
 	this->active &= ~SYN_ACTIVE_POWER;
@@ -4003,19 +4000,12 @@ static ssize_t clearpad_screen_status_store(struct device *dev,
 		const char *buf, size_t size)
 {
 	struct clearpad_t *this = dev_get_drvdata(dev);
-	int val;
 
 	dev_dbg(&this->pdev->dev, "%s: start\n", __func__);
 
 	LOCK(this);
 
-	if (sscanf(buf, "%d", &val) != 1 || val == this->screen_status) {
-		UNLOCK(this);
-		goto out;
-	}
-
-	this->screen_status = val;
-
+	sscanf(buf, "%d", &this->screen_status);
 	dev_dbg(&this->pdev->dev, "%s: screen_status = %d\n", __func__,
 				this->screen_status);
 
@@ -4031,7 +4021,6 @@ static ssize_t clearpad_screen_status_store(struct device *dev,
 
 	clearpad_set_power(this);
 
-out:
 	return strnlen(buf, PAGE_SIZE);
 }
 
@@ -4509,44 +4498,6 @@ static int clearpad_pm_suspend_noirq(struct device *dev)
 	}
 	return 0;
 }
-
-#ifdef CONFIG_FB
-static void fb_notify_blank(struct work_struct *ws)
-{
-	struct clearpad_t *c = container_of(ws, struct clearpad_t, ws_blank);
-
-	clearpad_screen_status_store(&c->pdev->dev, NULL, "0", 1);
-}
-
-static void fb_notify_unblank(struct work_struct *ws)
-{
-	struct clearpad_t *c = container_of(ws, struct clearpad_t, ws_unblank);
-
-	clearpad_screen_status_store(&c->pdev->dev, NULL, "1", 1);
-}
-
-static int fb_notify(struct notifier_block *nb, unsigned long val, void *data)
-{
-	struct fb_event *event = data;
-	struct clearpad_t *this = container_of(nb, struct clearpad_t, fb_nb);
-
-	if (val == FB_EVENT_BLANK && event->info->node == 0) {
-		int blank = *(int*)event->data;
-
-		if (blank == FB_BLANK_UNBLANK) {
-			cancel_work_sync(&this->ws_blank);
-			cancel_work_sync(&this->ws_unblank);
-			schedule_work(&this->ws_unblank);
-		} else if (blank == FB_BLANK_POWERDOWN) {
-			cancel_work_sync(&this->ws_blank);
-			cancel_work_sync(&this->ws_unblank);
-			schedule_work(&this->ws_blank);
-		}
-	}
-
-	return 0;
-}
-#endif
 
 #ifdef CONFIG_DEBUG_FS
 static int clearpad_get_num_tx_physical(struct clearpad_t *this, int num_tx)
@@ -5441,16 +5392,6 @@ static int __devinit clearpad_probe(struct platform_device *pdev)
 
 	this->state = SYN_STATE_RUNNING;
 
-#ifdef CONFIG_FB
-	this->fb_nb.notifier_call = fb_notify;
-	rc = fb_register_client(&this->fb_nb);
-	if (!rc) {
-		INIT_WORK(&this->ws_blank, fb_notify_blank);
-		INIT_WORK(&this->ws_unblank, fb_notify_unblank);
-	} else
-		dev_warn(&this->pdev->dev, "fb_register_client failed\n");
-#endif
-
 	/* sysfs */
 	rc = create_sysfs_entries(this);
 	if (rc)
@@ -5515,9 +5456,6 @@ err_sysfs_remove_group:
 #endif
 	remove_sysfs_entries(this);
 err_input_device:
-#ifdef CONFIG_FB
-	fb_unregister_client(&this->fb_nb);
-#endif
 	input_unregister_device(this->input);
 err_gpio_teardown:
 	clearpad_gpio_configure(this, 0);
@@ -5561,11 +5499,6 @@ static int __devexit clearpad_remove(struct platform_device *pdev)
 	debugfs_remove_recursive(this->debugfs);
 #endif
 	remove_sysfs_entries(this);
-#ifdef CONFIG_FB
-	fb_unregister_client(&this->fb_nb);
-	cancel_work_sync(&this->ws_blank);
-	cancel_work_sync(&this->ws_unblank);
-#endif
 	input_unregister_device(this->input);
 	clearpad_gpio_configure(this, 0);
 	clearpad_vreg_configure(this, 0);
