@@ -1,7 +1,7 @@
 /* drivers/input/touchscreen/max1187x.c
  *
  * Copyright (c)2013 Maxim Integrated Products, Inc.
- * Copyright (C) 2013-2014 Sony Mobile Communications AB.
+ * Copyright (C) 2013-2014 Sony Mobile Communications Inc.
  *
  * Driver Version: 3.3.2.2
  * Release Date: October 29, 2013
@@ -38,6 +38,10 @@
 #include <linux/regulator/consumer.h>
 #include <linux/slab.h>
 #include <linux/types.h>
+#ifdef CONFIG_FB
+#include <linux/fb.h>
+#include <linux/notifier.h>
+#endif
 
 #define NWORDS(a)    (sizeof(a) / sizeof(u16))
 #define BYTE_SIZE(a) ((a) * sizeof(u16))
@@ -321,6 +325,12 @@ struct data {
 	u8 sysfs_created;
 	bool is_raw_mode;
 	int screen_status;
+
+#ifdef CONFIG_FB
+	struct notifier_block fb_nb;
+	struct work_struct ws_blank;
+	struct work_struct ws_unblank;
+#endif
 
 	u16 button0:1;
 	u16 button1:1;
@@ -1280,8 +1290,14 @@ static ssize_t screen_status_store(struct device *dev,
 {
 	struct i2c_client *client = to_i2c_client(dev);
 	struct data *ts = i2c_get_clientdata(client);
+	int val;
 
-	sscanf(buf, "%d", &ts->screen_status);
+	if (sscanf(buf, "%d", &val) != 1 || val == ts->screen_status) {
+		goto out;
+	}
+
+	ts->screen_status = val;
+
 	dev_dbg(&ts->client->dev, "%s: screen_status = %d\n", __func__,
 				ts->screen_status);
 
@@ -1293,6 +1309,7 @@ static ssize_t screen_status_store(struct device *dev,
 			set_suspend_mode(ts);
 	}
 
+out:
 	return count;
 }
 
@@ -2180,6 +2197,44 @@ static void max1187x_gpio_init(struct data *ts, bool enable)
 	}
 }
 
+#ifdef CONFIG_FB
+static void fb_notify_blank(struct work_struct *ws)
+{
+	struct data *ts = container_of(ws, struct data, ws_blank);
+
+	screen_status_store(&ts->client->dev, NULL, "0", 1);
+}
+
+static void fb_notify_unblank(struct work_struct *ws)
+{
+	struct data *ts = container_of(ws, struct data, ws_unblank);
+
+	screen_status_store(&ts->client->dev, NULL, "1", 1);
+}
+
+static int fb_notify(struct notifier_block *nb, unsigned long val, void *data)
+{
+	struct fb_event *event = data;
+	struct data *ts = container_of(nb, struct data, fb_nb);
+
+	if (val == FB_EVENT_BLANK && event->info->node == 0) {
+		int blank = *(int*)event->data;
+
+		if (blank == FB_BLANK_UNBLANK) {
+			cancel_work_sync(&ts->ws_blank);
+			cancel_work_sync(&ts->ws_unblank);
+			schedule_work(&ts->ws_unblank);
+		} else if (blank == FB_BLANK_POWERDOWN) {
+			cancel_work_sync(&ts->ws_blank);
+			cancel_work_sync(&ts->ws_unblank);
+			schedule_work(&ts->ws_blank);
+		}
+	}
+
+	return 0;
+}
+#endif
+
 static int probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	struct device *dev = &client->dev;
@@ -2350,6 +2405,17 @@ static int probe(struct i2c_client *client, const struct i2c_device_id *id)
 
 	dev_info(dev, "(INIT): suspend/resume registration OK");
 
+#ifdef CONFIG_FB
+	ts->fb_nb.notifier_call = fb_notify;
+	ret = fb_register_client(&ts->fb_nb);
+	if (!ret) {
+		INIT_WORK(&ts->ws_blank, fb_notify_blank);
+		INIT_WORK(&ts->ws_unblank, fb_notify_unblank);
+	} else {
+		dev_warn(&ts->client->dev, "fb_register_client failed\n");
+	}
+#endif
+
 	/* set up debug interface */
 	ret = create_sysfs_entries(ts);
 	if (ret) {
@@ -2375,6 +2441,9 @@ static int probe(struct i2c_client *client, const struct i2c_device_id *id)
 err_device_init_sysfs_remove_group:
 	remove_sysfs_entries(ts);
 err_device_init_irq:
+#ifdef CONFIG_FB
+	fb_unregister_client(&ts->fb_nb);
+#endif
 	input_unregister_device(ts->input_dev);
 err_device_init_inputdev:
 	max1187x_chip_init(ts, false);
@@ -2401,6 +2470,12 @@ static void shutdown(struct i2c_client *client)
 		device_init_wakeup(&client->dev, 0);
 
 	remove_sysfs_entries(ts);
+
+#ifdef CONFIG_FB
+	fb_unregister_client(&ts->fb_nb);
+	cancel_work_sync(&ts->ws_blank);
+	cancel_work_sync(&ts->ws_unblank);
+#endif
 
 	if (ts->sysfs_created && ts->sysfs_created--)
 		device_remove_bin_file(&client->dev, &dev_attr_report);

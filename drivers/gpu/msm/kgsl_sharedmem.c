@@ -617,8 +617,7 @@ _kgsl_sharedmem_page_alloc(struct kgsl_memdesc *memdesc,
 			size_t size)
 {
 	int pcount = 0, ret = 0;
-	int j, page_size, sglen_alloc, sglen = 0;
-	size_t len;
+	int j, len, page_size, sglen_alloc, sglen = 0;
 	struct page **pages = NULL;
 	pgprot_t page_prot = pgprot_writecombine(PAGE_KERNEL);
 	void *ptr;
@@ -818,7 +817,7 @@ kgsl_sharedmem_page_alloc_user(struct kgsl_memdesc *memdesc,
 			    size_t size)
 {
 	size = PAGE_ALIGN(size);
-	if (size == 0 || size > UINT_MAX)
+	if (size == 0)
 		return -EINVAL;
 
 	return _kgsl_sharedmem_page_alloc(memdesc, pagetable, size);
@@ -966,8 +965,6 @@ kgsl_sharedmem_readl(const struct kgsl_memdesc *memdesc,
 	WARN_ON(offsetbytes + sizeof(uint32_t) > memdesc->size);
 	if (offsetbytes + sizeof(uint32_t) > memdesc->size)
 		return -ERANGE;
-
-	rmb();
 	src = (uint32_t *)(memdesc->hostptr + offsetbytes);
 	*dst = *src;
 	return 0;
@@ -994,9 +991,6 @@ kgsl_sharedmem_writel(struct kgsl_device *device,
 		src, sizeof(uint32_t));
 	dst = (uint32_t *)(memdesc->hostptr + offsetbytes);
 	*dst = src;
-
-	wmb();
-
 	return 0;
 }
 EXPORT_SYMBOL(kgsl_sharedmem_writel);

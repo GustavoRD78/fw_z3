@@ -131,6 +131,26 @@ static void put_device_address(struct smem_client *smem_client,
 	}
 }
 
+static int smem_import_ion_buf(struct smem_client *client, int fd,
+		struct msm_smem *mem)
+{
+	struct ion_handle *hndl;
+
+	hndl = ion_import_dma_buf(client->clnt, fd);
+	if (IS_ERR_OR_NULL(hndl)) {
+		dprintk(VIDC_ERR, "Failed to import ION buffer: %p, %d, %p\n",
+				client, fd, hndl);
+		return -ENOMEM;
+	}
+
+	mem->mem_type = client->mem_type;
+	mem->smem_priv = hndl;
+	dprintk(VIDC_DBG, "%s: ion_handle = 0x%p, fd = %d\n",
+		__func__, mem->smem_priv, fd);
+
+	return 0;
+}
+
 static int ion_user_to_kernel(struct smem_client *client, int fd, u32 offset,
 		struct msm_smem *mem, enum hal_buffer buffer_type)
 {
@@ -141,13 +161,13 @@ static int ion_user_to_kernel(struct smem_client *client, int fd, u32 offset,
 	int rc = 0;
 	int align = SZ_4K;
 
-	hndl = ion_import_dma_buf(client->clnt, fd);
-	if (IS_ERR_OR_NULL(hndl)) {
+	if (smem_import_ion_buf(client, fd, mem)) {
 		dprintk(VIDC_ERR, "Failed to get handle: %p, %d, %d, %p\n",
 				client, fd, offset, hndl);
 		rc = -ENOMEM;
 		goto fail_import_fd;
 	}
+	hndl = mem->smem_priv;
 	mem->kvaddr = NULL;
 	rc = ion_handle_get_flags(client->clnt, hndl, &ionflags);
 	if (rc) {
@@ -167,8 +187,6 @@ static int ion_user_to_kernel(struct smem_client *client, int fd, u32 offset,
 		goto fail_device_address;
 	}
 
-	mem->mem_type = client->mem_type;
-	mem->smem_priv = hndl;
 	mem->device_addr = iova;
 	mem->size = buffer_size;
 	dprintk(VIDC_DBG,
@@ -265,16 +283,17 @@ static void free_ion_mem(struct smem_client *client, struct msm_smem *mem)
 		"%s: ion_handle = 0x%p, device_addr = 0x%x, size = %d, kvaddr = 0x%p, buffer_type = %d\n",
 		__func__, mem->smem_priv, (u32)mem->device_addr,
 		mem->size, mem->kvaddr, mem->buffer_type);
-	rc = msm_smem_get_domain_partition((void *)client, mem->flags,
-			mem->buffer_type, &domain, &partition);
-	if (rc) {
-		dprintk(VIDC_ERR, "Failed to get domain, partition: %d", rc);
-		return;
-	}
 
-	if (mem->device_addr)
+	if (mem->device_addr) {
+		rc = msm_smem_get_domain_partition((void *)client, mem->flags,
+			mem->buffer_type, &domain, &partition);
+		if (rc) {
+			dprintk(VIDC_ERR, "Failed to get domain, partition: %d", rc);
+			return;
+		}
 		put_device_address(client,
 			mem->smem_priv, domain, partition, mem->flags);
+	}
 	if (mem->kvaddr)
 		ion_unmap_kernel(client->clnt, mem->smem_priv);
 	if (mem->smem_priv)
@@ -324,6 +343,31 @@ struct msm_smem *msm_smem_user_to_kernel(void *clt, int fd, u32 offset,
 		kfree(mem);
 		mem = NULL;
 	}
+	return mem;
+}
+
+struct msm_smem *msm_smem_import_ion_buf(void *clt, int fd)
+{
+	struct smem_client *client = clt;
+	struct msm_smem *mem;
+
+	if (fd < 0 || client->mem_type != SMEM_ION) {
+		dprintk(VIDC_ERR, "Invalid fd or mem type: fd %d, type %d\n",
+			fd, client->mem_type);
+		return NULL;
+	}
+
+	mem = kzalloc(sizeof(*mem), GFP_KERNEL);
+	if (!mem) {
+		dprintk(VIDC_ERR, "Failed to allocate shared mem\n");
+		return NULL;
+	}
+
+	if (smem_import_ion_buf(clt, fd, mem)) {
+		kfree(mem);
+		mem = NULL;
+	}
+
 	return mem;
 }
 

@@ -64,6 +64,8 @@ int msm_comm_smem_cache_operations(struct msm_vidc_inst *inst,
 		struct msm_smem *mem, enum smem_cache_ops cache_ops);
 struct msm_smem *msm_comm_smem_user_to_kernel(struct msm_vidc_inst *inst,
 			int fd, u32 offset, enum hal_buffer buffer_type);
+struct msm_smem *msm_comm_smem_import_ion_buf(struct msm_vidc_inst *inst,
+			int fd);
 int msm_comm_smem_get_domain_partition(struct msm_vidc_inst *inst,
 			u32 flags, enum hal_buffer buffer_type,
 			int *domain_num, int *partition_num);
