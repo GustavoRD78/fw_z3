@@ -4,6 +4,7 @@
  *
  * Copyright (c) 2008 Google Inc.
  * Copyright (c) 2007-2014, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2013 Sony Mobile Communications AB.
  * Modified: Nick Pelly <npelly@google.com>
  *
  * All source code in this file is licensed under the following license
@@ -66,6 +67,8 @@
 #include <mach/msm_serial_hs.h>
 #include <mach/msm_bus.h>
 #include <mach/msm_ipc_logging.h>
+
+#include <mach/bcm4339_bt_lpm.h>
 #include "msm_serial_hs_hwreg.h"
 #define UART_SPS_CONS_PERIPHERAL 0
 #define UART_SPS_PROD_PERIPHERAL 1
@@ -226,6 +229,8 @@ struct msm_hs_port {
 	struct msm_hs_wakeup wakeup;
 	struct wake_lock dma_wake_lock;  /* held while any DMA active */
 
+	void (*exit_lpm_cb)(struct uart_port *);
+
 	struct dentry *loopback_dir;
 	struct work_struct clock_off_w; /* work for actual clock off */
 	struct workqueue_struct *hsuart_wq; /* hsuart workqueue */
@@ -253,8 +258,8 @@ struct msm_hs_port {
 };
 
 static struct of_device_id msm_hs_match_table[] = {
-	{ .compatible = "qcom,msm-hsuart-v14",
-	},
+	{ .compatible = "qcom,msm-hsuart-v14"},
+	{}
 };
 
 
@@ -1547,6 +1552,10 @@ static void msm_hs_start_tx_locked(struct uart_port *uport )
 		MSM_HS_WARN("%s: Failed.Clocks are OFF\n", __func__);
 		return;
 	}
+	if (msm_uport->exit_lpm_cb) {
+		msm_uport->exit_lpm_cb(uport);
+	}
+
 	if ((msm_uport->tx.tx_ready_int_en == 0) &&
 		(msm_uport->tx.dma_in_flight == 0))
 			msm_hs_submit_tx_locked(uport);
@@ -2569,6 +2578,8 @@ struct msm_serial_hs_platform_data
 		return ERR_PTR(-EINVAL);
 	}
 
+	pdata->exit_lpm_cb = bcm_bt_lpm_exit_lpm_locked;
+
 	MSM_HS_DBG("tx_ep_pipe_index:%d rx_ep_pipe_index:%d\n"
 		"tx_gpio:%d rx_gpio:%d rfr_gpio:%d cts_gpio:%d",
 		pdata->bam_tx_ep_pipe_index, pdata->bam_rx_ep_pipe_index,
@@ -2938,6 +2949,14 @@ static int __devinit msm_hs_probe(struct platform_device *pdev)
 				pdata->bam_tx_ep_pipe_index;
 		msm_uport->bam_rx_ep_pipe_index =
 				pdata->bam_rx_ep_pipe_index;
+	}
+
+	if (pdata == NULL) {
+		dev_warn(&pdev->dev, "msm_hs_probe() pdata is null\n");
+		msm_uport->exit_lpm_cb = NULL;
+	} else {
+		dev_dbg(&pdev->dev, "msm_hs_probe() set exit_lpm_cb\n");
+		msm_uport->exit_lpm_cb = pdata->exit_lpm_cb;
 	}
 
 	uport->iotype = UPIO_MEM;
