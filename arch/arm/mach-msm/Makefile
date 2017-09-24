@@ -308,16 +308,6 @@ obj-$(CONFIG_MACH_SAPPHIRE) += board-sapphire-rfkill.o msm_vibrator.o
 
 ifdef CONFIG_MACH_SONY_SIRIUS
 	obj-$(CONFIG_MACH_SONY_SIRIUS) += board-sony_sirius-gpiomux.o board-sony_sirius_samba-gpiomux-diff.o board-sony_shinano-nfc.o bms-batterydata-gouf.o
-else ifdef CONFIG_MACH_SONY_LEO
-	obj-$(CONFIG_MACH_SONY_LEO) += board-sony_leo-gpiomux.o board-sony_leo_samba-gpiomux-diff.o bms-batterydata-leo.o board-sony_shinano-nfc.o
-else ifdef CONFIG_MACH_SONY_LEO_DCM
-	obj-$(CONFIG_MACH_SONY_LEO_DCM) += board-sony_leo_dcm-gpiomux.o bms-batterydata-leo.o
-else ifdef CONFIG_MACH_SONY_LEO_DSDS
-	obj-$(CONFIG_MACH_SONY_LEO_DSDS) += board-sony_leo_dsds-gpiomux.o bms-batterydata-leo.o board-sony_shinano-nfc.o sim_detect_somc.o
-else ifdef CONFIG_MACH_SONY_ARIES
-	obj-$(CONFIG_MACH_SONY_ARIES) += board-sony_aries-gpiomux.o bms-batterydata-aries.o board-sony_shinano-nfc.o
-else ifdef CONFIG_MACH_SONY_ARIES_DCM
-	obj-$(CONFIG_MACH_SONY_ARIES_DCM) += board-sony_aries_dcm-gpiomux.o bms-batterydata-aries.o board-sony_shinano-nfc.o
 else ifdef CONFIG_MACH_SONY_AJISAI_DCM
 	obj-$(CONFIG_MACH_SONY_AJISAI_DCM) += board-sony_ajisai_dcm-gpiomux.o bms-batterydata-aries.o board-sony_shinano-nfc.o
 else

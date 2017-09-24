@@ -5,8 +5,6 @@
 
 Configuration files can be found in arch/arm/configs.
 
-    Xperia Z3 (Leo/SO-01G)                                                      => shinano_leo_dcm_defconfig
-    Xperia Z3 Compact (Aries/SO-02G)                                            => shinano_aries_dcm_defconfig
     Xperia A4 (Ajisai/SO-04G)                                                   => shinano_ajisai_dcm_defconfig
 
 How to build your kernel:
@@ -41,7 +39,7 @@ How to build your kernel:
       NOTE: Please set the prefix of the ARM cross-compiler.
             ex) arm-linux-androideabi-
 
-    $ make O=<path-of-output> shinano_leo_dcm_defconfig
+    $ make O=<path-of-output> shinano_ajisai_dcm_defconfig
 
     $ make O=<path-of-output>
 

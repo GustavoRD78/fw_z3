@@ -48,11 +48,7 @@ endif
 # MSM8974
    zreladdr-$(CONFIG_ARCH_MSM8974)	:= 0x00008000
    dtb-$(CONFIG_MACH_SONY_SIRIUS)	+= msm8974pro-ab-shinano_sirius.dtb
-   dtb-$(CONFIG_MACH_SONY_LEO)		+= msm8974pro-ac-shinano_leo.dtb
-   dtb-$(CONFIG_MACH_SONY_LEO_DCM)	+= msm8974pro-ac-shinano_leo_dcm.dtb
-   dtb-$(CONFIG_MACH_SONY_LEO_DSDS)	+= msm8974pro-ac-shinano_leo.dtb
-   dtb-$(CONFIG_MACH_SONY_ARIES)	+= msm8974pro-ac-shinano_aries.dtb
-   dtb-$(CONFIG_MACH_SONY_ARIES_DCM)	+= msm8974pro-ac-shinano_aries_dcm.dtb
+   dtb-$(CONFIG_MACH_SONY_AJISAI_DCM)	+= msm8974pro-ac-shinano_aries_dcm.dtb
 
 # APQ8084
    zreladdr-$(CONFIG_ARCH_APQ8084)	:= 0x00008000

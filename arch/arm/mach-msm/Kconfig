@@ -1148,51 +1148,6 @@ config MACH_SONY_SIRIUS
 	  If you enable this config,
 	  Please use SONY Mobile source tree.
 
-config MACH_SONY_LEO
-	depends on ARCH_MSM8974
-	bool "Sony Mobile Leo"
-	help
-	  Support for the SONY Mobile Leo device.
-	  It is based on QCOM MSM8974 AC chipset.
-	  If you enable this config,
-	  Please use SONY Mobile source tree.
-
-config MACH_SONY_LEO_DCM
-	depends on ARCH_MSM8974
-	bool "Sony Mobile Leo Docomo"
-	help
-	  Support for the SONY Mobile Leo Docomo device.
-	  It is based on QCOM MSM8974 AC chipset.
-	  If you enable this config,
-	  Please use SONY Mobile source tree.
-
-config MACH_SONY_LEO_DSDS
-	depends on ARCH_MSM8974
-	bool "Sony Mobile Leo DSDS"
-	help
-	  Support for the SONY Mobile Leo DSDS device.
-	  It is based on QCOM MSM8974 AC chipset.
-	  If you enable this config,
-	  Please use SONY Mobile source tree.
-
-config MACH_SONY_ARIES
-	depends on ARCH_MSM8974
-	bool "Sony Mobile Aries"
-	help
-	  Support for the SONY Mobile Aries device.
-	  It is based on QCOM MSM8974 AC chipset.
-	  If you enable this config,
-	  Please use SONY Mobile source tree.
-
-config MACH_SONY_ARIES_DCM
-	depends on ARCH_MSM8974
-	bool "Sony Mobile Aries Docomo"
-	help
-	  Support for the SONY Mobile Aries Docomo device.
-	  It is based on QCOM MSM8974 AC chipset.
-	  If you enable this config,
-	  Please use SONY Mobile source tree.
-
 config MACH_SONY_AJISAI_DCM
 	depends on ARCH_MSM8974
 	bool "Sony Mobile Ajisai Docomo"
